@@ -1,24 +1,20 @@
 import Link from "next/link";
 
 interface WorkCardProps {
-  slug: string;
-  title: string;
-  year?: number | null;
-  role: string;
-  genre?: string | null;
-  poster?: string | null;
-  logline?: string | null;
+  work: {
+    id?: string;
+    slug: string;
+    title: string;
+    year?: number | null;
+    role: string;
+    genre?: string | null;
+    poster?: string | null;
+    logline?: string | null;
+  };
 }
 
-export default function WorkCard({
-  slug,
-  title,
-  year,
-  role,
-  genre,
-  poster,
-  logline,
-}: WorkCardProps) {
+export default function WorkCard({ work }: WorkCardProps) {
+  const { slug, title, year, role, genre, poster, logline } = work;
   return (
     <Link href={`/works/${slug}`} className="group block">
       <div className="card-hover rounded-lg overflow-hidden bg-charcoal-900 border border-charcoal-800 hover:border-gold-400/30 transition-colors duration-500">
