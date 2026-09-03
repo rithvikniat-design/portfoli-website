@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const baseName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9-_]/g, "-").toLowerCase();
   const uniqueName = `${baseName}-${Date.now()}${ext}`;
   
-  let finalBuffer = buffer;
+  let finalBuffer: any = buffer;
   let finalName = uniqueName;
 
   try {
