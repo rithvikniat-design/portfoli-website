@@ -2,17 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
-import { existsSync } from "fs";
-
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
-
-async function ensureUploadDir() {
-  if (!existsSync(UPLOAD_DIR)) {
-    await mkdir(UPLOAD_DIR, { recursive: true });
-  }
-}
 
 export async function GET() {
   const { data } = await supabase.from("Media").select("*").order("createdAt", { ascending: false });
@@ -22,8 +12,6 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  await ensureUploadDir();
 
   const formData = await req.formData();
   const file = formData.get("file") as File;
@@ -41,6 +29,7 @@ export async function POST(req: NextRequest) {
   
   let finalBuffer: any = buffer;
   let finalName = uniqueName;
+  let mimeType = file.type;
 
   try {
     const sharp = (await import("sharp")).default;
@@ -50,18 +39,37 @@ export async function POST(req: NextRequest) {
         .webp({ quality: 85 })
         .toBuffer();
       finalName = `${baseName}-${Date.now()}.webp`;
+      mimeType = "image/webp";
     }
-  } catch {}
+  } catch (error) {
+    console.error("Sharp processing failed, falling back to original file:", error);
+  }
 
-  const finalPath = path.join(UPLOAD_DIR, finalName);
-  await writeFile(finalPath, finalBuffer);
+  // Upload to Supabase Storage
+  const { error: uploadError } = await supabase.storage
+    .from("uploads")
+    .upload(finalName, finalBuffer, {
+      contentType: mimeType,
+      upsert: false
+    });
 
-  const url = `/uploads/${finalName}`;
+  if (uploadError) {
+    console.error("Supabase storage upload error:", uploadError);
+    return NextResponse.json({ error: "Failed to upload to storage" }, { status: 500 });
+  }
 
+  // Get public URL
+  const { data: publicUrlData } = supabase.storage
+    .from("uploads")
+    .getPublicUrl(finalName);
+
+  const url = publicUrlData.publicUrl;
+
+  // Save to Media table
   const { data } = await supabase.from("Media").insert([{
     filename: finalName,
     url,
-    mimeType: finalBuffer === buffer ? file.type : "image/webp",
+    mimeType,
     size: finalBuffer.length,
     alt: formData.get("alt")?.toString() || "",
   }]).select().single();
@@ -80,11 +88,13 @@ export async function DELETE(req: NextRequest) {
   const { data: media } = await supabase.from("Media").select("*").eq("id", id).single();
   if (!media) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const filePath = path.join(process.cwd(), "public", media.url);
-  try {
-    await unlink(filePath);
-  } catch {}
+  // Delete from Supabase Storage
+  if (media.filename) {
+    await supabase.storage.from("uploads").remove([media.filename]);
+  }
 
+  // Delete from Media table
   await supabase.from("Media").delete().eq("id", id);
+  
   return NextResponse.json({ success: true });
 }
