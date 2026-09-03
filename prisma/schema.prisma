@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String   @default("Admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Work {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  year        Int?
+  role        String      @default("Director") // Director, Writer, Producer — comma-separated
+  logline     String?
+  description String?     // Rich HTML
+  poster      String?     // URL/path to poster image
+  trailerUrl  String?     // YouTube/Vimeo embed URL
+  genre       String?     // Comma-separated
+  runtime     String?
+  festivals   String?     // JSON array string
+  credits     String?     // JSON array string
+  tags        String?     // Comma-separated
+  pdfUrl      String?     // Treatment/lookbook PDF
+  featured    Boolean     @default(false)
+  status      String      @default("draft") // draft | published
+  order       Int         @default(0)
+  deletedAt   DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  images      WorkImage[]
+}
+
+model WorkImage {
+  id     String @id @default(cuid())
+  url    String
+  alt    String @default("")
+  order  Int    @default(0)
+  workId String
+  work   Work   @relation(fields: [workId], references: [id], onDelete: Cascade)
+}
+
+model InDevProject {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  concept     String?   // Rich HTML
+  treatment   String?   // Rich HTML
+  devStatus   String    @default("Concept") // Concept | Treatment | Pre-Production | Financing
+  poster      String?
+  genre       String?
+  tags        String?
+  featured    Boolean   @default(false)
+  status      String    @default("draft") // draft | published
+  order       Int       @default(0)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Novel {
+  id         String    @id @default(cuid())
+  title      String
+  slug       String    @unique
+  coverImage String?
+  genre      String?
+  pubStatus  String    @default("Forthcoming") // Draft | Forthcoming | Published
+  synopsis   String?   // Rich HTML
+  excerpt    String?   // Rich HTML
+  buyLink    String?
+  isbn       String?
+  publisher  String?
+  featured   Boolean   @default(false)
+  status     String    @default("draft") // draft | published (visibility)
+  order      Int       @default(0)
+  deletedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model About {
+  id            String   @id @default(cuid())
+  bio           String?  // Rich HTML
+  portrait      String?
+  awards        String?  // JSON array
+  press         String?  // JSON array
+  collaborators String?  // JSON array
+  updatedAt     DateTime @updatedAt
+}
+
+model SiteSettings {
+  id           String   @id @default(cuid())
+  siteName     String   @default("Director Portfolio")
+  tagline      String   @default("")
+  heroSubtitle String   @default("")
+  contactEmail String   @default("")
+  socialLinks  String?  // JSON array [{platform, url}]
+  updatedAt    DateTime @updatedAt
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  filename  String
+  url       String
+  mimeType  String
+  size      Int
+  alt       String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String   @default("")
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
