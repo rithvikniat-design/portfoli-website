@@ -1,142 +1,53 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import ScrollReveal from "@/components/public/ScrollReveal";
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "In Development",
-  description: "Upcoming films and projects currently in development.",
-};
-
-export const dynamic = "force-dynamic";
-
-function getStatusBadgeClass(status: string) {
-  const s = status.toLowerCase().replace(/[- ]/g, "");
-  if (s === "concept") return "badge-concept";
-  if (s === "treatment") return "badge-treatment";
-  if (s.includes("pre")) return "badge-preproduction";
-  if (s === "financing") return "badge-financing";
-  return "badge-draft";
-}
+export const metadata = { title: "In Development | Director Portfolio" };
 
 export default async function InDevelopmentPage() {
-  const projects = await prisma.inDevProject.findMany({
-    where: { status: "published", deletedAt: null },
-    orderBy: { order: "asc" },
-  });
+  const { data: projects } = await supabase.from("InDevProject").select("*").eq("status", "published").order("order", { ascending: true });
 
   return (
-    <div className="page-enter pt-28 pb-20 px-6 lg:px-8 max-w-7xl mx-auto">
-      <div className="mb-16">
-        <span className="text-gold-400 text-xs uppercase tracking-[0.3em]">
-          Coming Soon
-        </span>
-        <h1 className="font-display text-4xl md:text-5xl text-white mt-3 mb-4">
-          In Development
-        </h1>
-        <p className="text-charcoal-400 max-w-xl">
-          Projects currently in various stages of development.
-        </p>
-        <div className="gold-divider mt-8" />
-      </div>
-
-      {projects.length > 0 ? (
-        <div className="space-y-8">
-          {projects.map((project, i) => (
-            <ScrollReveal key={project.id} delay={i * 100}>
-              <div className="group bg-charcoal-900/50 border border-charcoal-800 rounded-xl overflow-hidden hover:border-gold-400/20 transition-all duration-500">
-                <div className="flex flex-col md:flex-row">
-                  {/* Poster */}
-                  {project.poster && (
-                    <div className="md:w-48 lg:w-56 shrink-0">
-                      <div className="aspect-[2/3] md:aspect-auto md:h-full">
-                        <img
-                          src={project.poster}
-                          alt={project.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Content */}
-                  <div className="flex-1 p-6 lg:p-8">
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <span
-                        className={`badge ${getStatusBadgeClass(project.devStatus)}`}
-                      >
-                        {project.devStatus}
-                      </span>
-                      {project.genre && (
-                        <span className="text-xs text-charcoal-400 uppercase tracking-wider">
-                          {project.genre}
-                        </span>
-                      )}
-                    </div>
-
-                    <h2 className="font-display text-2xl lg:text-3xl text-white mb-4 group-hover:text-gold-400 transition-colors">
-                      {project.title}
-                    </h2>
-
-                    {project.concept && (
-                      <div className="mb-4">
-                        <h3 className="text-xs uppercase tracking-widest text-gold-400 mb-2">
-                          Concept
-                        </h3>
-                        <div
-                          className="prose-dark text-sm"
-                          dangerouslySetInnerHTML={{ __html: project.concept }}
-                        />
-                      </div>
-                    )}
-
-                    {project.treatment && (
-                      <details className="group/details">
-                        <summary className="text-xs uppercase tracking-widest text-gold-400 cursor-pointer hover:text-gold-300 transition-colors mb-2 list-none flex items-center gap-1">
-                          <span>Treatment</span>
-                          <svg
-                            className="w-3 h-3 transition-transform group-open/details:rotate-180"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </summary>
-                        <div
-                          className="prose-dark text-sm mt-2"
-                          dangerouslySetInnerHTML={{ __html: project.treatment }}
-                        />
-                      </details>
-                    )}
-
-                    {project.tags && (
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        {project.tags.split(",").map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 text-[10px] rounded-full bg-charcoal-800 text-charcoal-400 border border-charcoal-700"
-                          >
-                            {tag.trim()}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+    <div className="pt-32 pb-24 px-6 md:px-12 max-w-4xl mx-auto">
+      <ScrollReveal>
+        <h1 className="text-4xl md:text-5xl font-light mb-6 tracking-wide">In Development</h1>
+        <p className="text-xl text-zinc-400 font-light mb-16">Projects currently seeking funding, packaging, or in active pre-production.</p>
+      </ScrollReveal>
+      
+      <div className="flex flex-col gap-12 lg:gap-24">
+        {projects?.map((project, index) => (
+          <ScrollReveal key={project.id} delay={0.1}>
+            <div className="border border-zinc-800 bg-zinc-950 p-8 md:p-12 relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1 h-full bg-gold transform origin-bottom scale-y-0 group-hover:scale-y-100 transition-transform duration-500 ease-out" />
+              
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                <div>
+                  <h2 className="text-3xl md:text-4xl font-light mb-2">{project.title}</h2>
+                  <div className="flex items-center gap-3 text-xs font-mono tracking-wider text-zinc-500">
+                    <span>{project.genre}</span>
                   </div>
                 </div>
+                <div className="inline-flex items-center px-4 py-2 border border-zinc-800 bg-black text-xs uppercase tracking-widest font-mono text-gold">
+                  Status: {project.devStatus}
+                </div>
               </div>
-            </ScrollReveal>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-20 text-charcoal-500">
-          <p className="text-lg">No projects in development at this time.</p>
-        </div>
-      )}
+
+              {project.concept && (
+                <div className="mb-8">
+                  <h3 className="text-sm text-gold font-mono uppercase tracking-widest mb-4">Concept</h3>
+                  <div className="prose prose-invert prose-zinc max-w-none prose-p:leading-relaxed prose-p:text-zinc-300" dangerouslySetInnerHTML={{ __html: project.concept }} />
+                </div>
+              )}
+              
+              {project.treatment && (
+                <div className="pt-8 border-t border-zinc-900">
+                  <h3 className="text-sm text-zinc-500 font-mono uppercase tracking-widest mb-4">Director's Treatment</h3>
+                  <div className="prose prose-invert prose-zinc max-w-none prose-sm prose-p:leading-relaxed prose-p:text-zinc-400 font-serif italic" dangerouslySetInnerHTML={{ __html: project.treatment }} />
+                </div>
+              )}
+            </div>
+          </ScrollReveal>
+        ))}
+      </div>
     </div>
   );
 }

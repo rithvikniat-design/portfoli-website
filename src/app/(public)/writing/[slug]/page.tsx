@@ -1,128 +1,76 @@
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 import { notFound } from "next/navigation";
-import ScrollReveal from "@/components/public/ScrollReveal";
-import { BookOpen, ExternalLink } from "lucide-react";
-import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft, ExternalLink, BookOpen } from "lucide-react";
 
-interface Props {
-  params: { slug: string };
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const novel = await prisma.novel.findUnique({ where: { slug: params.slug } });
+export async function generateMetadata({ params }: { params: { slug: string } }) {
+  const { data: novel } = await supabase.from("Novel").select("*").eq("slug", params.slug).single();
   if (!novel) return { title: "Not Found" };
-  return {
-    title: novel.title,
-    description: novel.synopsis
-      ? novel.synopsis.replace(/<[^>]*>/g, "").substring(0, 160)
-      : `${novel.title} by Arjun Menon`,
-    openGraph: {
-      title: novel.title,
-      images: novel.coverImage ? [{ url: novel.coverImage }] : undefined,
-    },
-  };
+  return { title: `${novel.title} | Writing` };
 }
 
-export const dynamic = "force-dynamic";
-
-export default async function NovelDetailPage({ params }: Props) {
-  const novel = await prisma.novel.findUnique({
-    where: { slug: params.slug, status: "published", deletedAt: null },
-  });
-
+export default async function NovelDetail({ params }: { params: { slug: string } }) {
+  const { data: novel } = await supabase.from("Novel").select("*").eq("slug", params.slug).single();
   if (!novel) notFound();
 
   return (
-    <div className="page-enter pt-28 pb-20 px-6 lg:px-8 max-w-7xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-12 lg:gap-16">
-        {/* Cover */}
-        <ScrollReveal>
-          <div className="mx-auto lg:mx-0 w-64 lg:w-full">
-            <div className="aspect-[2/3] rounded-xl overflow-hidden bg-charcoal-800 shadow-2xl border border-charcoal-700/50">
-              {novel.coverImage ? (
-                <img
-                  src={novel.coverImage}
-                  alt={novel.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-charcoal-600">
-                  <BookOpen size={48} />
-                </div>
-              )}
-            </div>
+    <div className="pt-32 pb-24 px-6 md:px-12 max-w-7xl mx-auto">
+      <Link href="/writing" className="inline-flex items-center gap-2 text-zinc-400 hover:text-gold transition-colors mb-12 group">
+        <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+        Back to Writing
+      </Link>
 
-            {/* Buy Link */}
-            {novel.buyLink && (
-              <a
-                href={novel.buyLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-gold-400 text-charcoal-950 font-medium rounded-lg hover:bg-gold-300 transition-colors"
-              >
-                Purchase <ExternalLink size={16} />
-              </a>
-            )}
-          </div>
-        </ScrollReveal>
-
-        {/* Content */}
-        <ScrollReveal delay={100}>
-          <div>
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              {novel.pubStatus && (
-                <span className="badge badge-published">{novel.pubStatus}</span>
-              )}
-              {novel.genre && (
-                <span className="text-xs text-charcoal-400 uppercase tracking-wider">
-                  {novel.genre}
-                </span>
-              )}
-            </div>
-
-            <h1 className="font-display text-4xl md:text-5xl text-white mb-6">
-              {novel.title}
-            </h1>
-
-            {(novel.publisher || novel.isbn) && (
-              <p className="text-charcoal-400 mb-8">
-                {novel.publisher}
-                {novel.publisher && novel.isbn && " · "}
-                {novel.isbn && `ISBN: ${novel.isbn}`}
-              </p>
-            )}
-
-            {/* Synopsis */}
-            {novel.synopsis && (
-              <div className="mb-12">
-                <h2 className="font-display text-xl text-white mb-4">
-                  Synopsis
-                </h2>
-                <div
-                  className="prose-dark"
-                  dangerouslySetInnerHTML={{ __html: novel.synopsis }}
-                />
-              </div>
-            )}
-
-            <div className="gold-divider my-10" />
-
-            {/* Excerpt */}
-            {novel.excerpt && (
-              <div>
-                <h2 className="font-display text-xl text-white mb-4">
-                  Excerpt
-                </h2>
-                <div className="bg-charcoal-900/50 border border-charcoal-800 rounded-xl p-6 lg:p-8">
-                  <div
-                    className="prose-dark italic"
-                    dangerouslySetInnerHTML={{ __html: novel.excerpt }}
-                  />
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-24">
+        <div className="md:col-span-5 lg:col-span-4">
+          <div className="aspect-[2/3] relative rounded-lg overflow-hidden border border-zinc-800 shadow-2xl">
+            {novel.coverImage ? (
+              <Image src={novel.coverImage} alt={novel.title} fill className="object-cover" />
+            ) : (
+              <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
+                <BookOpen size={48} className="text-zinc-800" />
               </div>
             )}
           </div>
-        </ScrollReveal>
+        </div>
+
+        <div className="md:col-span-7 lg:col-span-8 flex flex-col justify-center">
+          <div className="mb-8">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-light mb-4">{novel.title}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400 font-mono tracking-wider">
+              {novel.genre && <span>{novel.genre}</span>}
+              {novel.genre && <span>•</span>}
+              <span>{novel.pubStatus}</span>
+              {novel.publisher && <span>•</span>}
+              {novel.publisher && <span>{novel.publisher}</span>}
+            </div>
+          </div>
+
+          {novel.buyLink && (
+            <a
+              href={novel.buyLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gold text-black hover:bg-white transition-colors uppercase tracking-widest text-sm font-medium w-fit mb-12"
+            >
+              Order Now <ExternalLink size={16} />
+            </a>
+          )}
+
+          {novel.synopsis && (
+            <div className="mb-12">
+              <h2 className="text-sm text-gold font-mono uppercase tracking-widest mb-6">Synopsis</h2>
+              <div className="prose prose-invert prose-zinc max-w-none prose-p:leading-relaxed prose-p:text-zinc-300" dangerouslySetInnerHTML={{ __html: novel.synopsis }} />
+            </div>
+          )}
+
+          {novel.excerpt && (
+            <div className="p-8 md:p-12 border border-zinc-800 bg-black relative">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black px-4 text-xs font-mono tracking-widest text-zinc-500 uppercase">Excerpt</div>
+              <div className="prose prose-invert prose-zinc max-w-none prose-p:leading-relaxed prose-p:text-zinc-400 font-serif italic" dangerouslySetInnerHTML={{ __html: novel.excerpt }} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

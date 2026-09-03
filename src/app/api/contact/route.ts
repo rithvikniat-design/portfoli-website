@@ -1,36 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const messages = await prisma.contactSubmission.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json(messages);
+  const { data } = await supabase.from("ContactSubmission").select("*").order("createdAt", { ascending: false });
+  return NextResponse.json(data || []);
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
+  const { data } = await supabase.from("ContactSubmission").insert([body]).select().single();
+  return NextResponse.json(data, { status: 201 });
+}
 
-  if (!body.name || !body.email || !body.message) {
-    return NextResponse.json(
-      { error: "Name, email, and message are required" },
-      { status: 400 }
-    );
-  }
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const submission = await prisma.contactSubmission.create({
-    data: {
-      name: body.name,
-      email: body.email,
-      subject: body.subject || "",
-      message: body.message,
-    },
-  });
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
 
-  return NextResponse.json({ success: true, id: submission.id }, { status: 201 });
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
+
+  await supabase.from("ContactSubmission").delete().eq("id", id);
+  return NextResponse.json({ success: true });
 }

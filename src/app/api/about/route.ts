@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
-  const about = await prisma.about.findFirst();
-  return NextResponse.json(about || {});
+  const { data } = await supabase.from("About").select("*").limit(1).single();
+  return NextResponse.json(data || {});
 }
 
 export async function PUT(req: NextRequest) {
@@ -14,29 +14,16 @@ export async function PUT(req: NextRequest) {
 
   const body = await req.json();
   
-  let about = await prisma.about.findFirst();
-  if (about) {
-    about = await prisma.about.update({
-      where: { id: about.id },
-      data: {
-        bio: body.bio || null,
-        portrait: body.portrait || null,
-        awards: body.awards || null,
-        press: body.press || null,
-        collaborators: body.collaborators || null,
-      },
-    });
+  const { data: existing } = await supabase.from("About").select("id").limit(1).maybeSingle();
+
+  let result;
+  if (existing) {
+    const { data } = await supabase.from("About").update(body).eq("id", existing.id).select().single();
+    result = data;
   } else {
-    about = await prisma.about.create({
-      data: {
-        bio: body.bio || null,
-        portrait: body.portrait || null,
-        awards: body.awards || null,
-        press: body.press || null,
-        collaborators: body.collaborators || null,
-      },
-    });
+    const { data } = await supabase.from("About").insert([body]).select().single();
+    result = data;
   }
 
-  return NextResponse.json(about);
+  return NextResponse.json(result);
 }

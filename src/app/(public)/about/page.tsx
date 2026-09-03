@@ -1,171 +1,59 @@
-import { prisma } from "@/lib/prisma";
-import { parseJsonField } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import Image from "next/image";
 import ScrollReveal from "@/components/public/ScrollReveal";
-import { Award, Quote, Users } from "lucide-react";
-import type { Metadata } from "next";
 
-export const metadata: Metadata = {
-  title: "About",
-  description: "Biography, awards, press, and collaborators.",
-};
-
-export const dynamic = "force-dynamic";
+export const metadata = { title: "About | Director Portfolio" };
 
 export default async function AboutPage() {
-  const about = await prisma.about.findFirst();
-
-  const awards = parseJsonField<{ title: string; year?: string; detail?: string }[]>(
-    about?.awards,
-    []
-  );
-  const press = parseJsonField<{ title: string; outlet?: string; url?: string }[]>(
-    about?.press,
-    []
-  );
-  const collaborators = parseJsonField<{ name: string; role?: string; image?: string }[]>(
-    about?.collaborators,
-    []
-  );
+  const { data: about } = await supabase.from("About").select("*").limit(1).single();
 
   return (
-    <div className="page-enter pt-28 pb-20 px-6 lg:px-8 max-w-7xl mx-auto">
-      <div className="mb-16">
-        <span className="text-gold-400 text-xs uppercase tracking-[0.3em]">
-          Biography
-        </span>
-        <h1 className="font-display text-4xl md:text-5xl text-white mt-3 mb-4">
-          About
-        </h1>
-        <div className="gold-divider mt-8" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-16">
-        {/* Main Content */}
-        <div>
-          {/* Portrait + Bio */}
-          <ScrollReveal>
-            <div className="flex flex-col md:flex-row gap-8 mb-16">
-              {about?.portrait && (
-                <div className="w-48 md:w-64 shrink-0 mx-auto md:mx-0">
-                  <div className="aspect-[3/4] rounded-xl overflow-hidden bg-charcoal-800 shadow-2xl border border-charcoal-700/50">
-                    <img
-                      src={about.portrait}
-                      alt="Director portrait"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+    <div className="pt-32 pb-24 px-6 md:px-12 max-w-7xl mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24">
+        
+        {about?.portrait && (
+          <div className="lg:col-span-5">
+            <ScrollReveal>
+              <div className="aspect-[3/4] relative border border-zinc-800 p-2">
+                <div className="relative w-full h-full overflow-hidden filter grayscale hover:grayscale-0 transition-all duration-700">
+                  <Image src={about.portrait} alt="Portrait" fill className="object-cover" />
                 </div>
-              )}
-              {about?.bio && (
-                <div
-                  className="prose-dark flex-1"
-                  dangerouslySetInnerHTML={{ __html: about.bio }}
-                />
-              )}
-            </div>
+              </div>
+            </ScrollReveal>
+          </div>
+        )}
+
+        <div className={`${about?.portrait ? 'lg:col-span-7' : 'lg:col-span-12 max-w-3xl mx-auto'}`}>
+          <ScrollReveal delay={0.1}>
+            <h1 className="text-4xl md:text-5xl font-light mb-12 tracking-wide">About</h1>
+            
+            {about?.bio && (
+              <div className="prose prose-invert prose-zinc max-w-none prose-p:leading-loose prose-p:text-zinc-300 prose-p:text-lg mb-16 font-light" dangerouslySetInnerHTML={{ __html: about.bio }} />
+            )}
           </ScrollReveal>
 
-          {/* Press */}
-          {press.length > 0 && (
-            <ScrollReveal className="mb-16">
-              <h2 className="font-display text-2xl text-white mb-6 flex items-center gap-3">
-                <Quote size={20} className="text-gold-400" />
-                Press
-              </h2>
-              <div className="space-y-4">
-                {press.map((item, i) => (
-                  <div
-                    key={i}
-                    className="bg-charcoal-900/50 border border-charcoal-800 rounded-lg p-5"
-                  >
-                    <p className="text-white font-medium mb-1">{item.title}</p>
-                    {item.outlet && (
-                      <p className="text-sm text-charcoal-400">
-                        {item.url ? (
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gold-400 hover:text-gold-300 transition-colors"
-                          >
-                            {item.outlet} ↗
-                          </a>
-                        ) : (
-                          item.outlet
-                        )}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </ScrollReveal>
-          )}
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            {about?.awards && (
+              <ScrollReveal delay={0.2}>
+                <h3 className="text-sm uppercase tracking-widest text-gold font-mono mb-6">Awards & Honors</h3>
+                <div className="prose prose-invert prose-sm prose-p:text-zinc-400" dangerouslySetInnerHTML={{ __html: about.awards }} />
+              </ScrollReveal>
+            )}
 
-        {/* Sidebar */}
-        <div>
-          {/* Awards */}
-          {awards.length > 0 && (
-            <ScrollReveal className="mb-12">
-              <h2 className="font-display text-xl text-white mb-6 flex items-center gap-3">
-                <Award size={18} className="text-gold-400" />
-                Awards & Festivals
-              </h2>
-              <div className="space-y-3">
-                {awards.map((award, i) => (
-                  <div
-                    key={i}
-                    className="border-l-2 border-gold-400/30 pl-4 py-1"
-                  >
-                    <p className="text-sm text-white font-medium">
-                      {award.title}
-                    </p>
-                    <p className="text-xs text-charcoal-400">
-                      {award.detail}
-                      {award.year && ` · ${award.year}`}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </ScrollReveal>
-          )}
-
-          {/* Collaborators */}
-          {collaborators.length > 0 && (
-            <ScrollReveal>
-              <h2 className="font-display text-xl text-white mb-6 flex items-center gap-3">
-                <Users size={18} className="text-gold-400" />
-                Key Collaborators
-              </h2>
-              <div className="space-y-4">
-                {collaborators.map((collab, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    {collab.image ? (
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-charcoal-800">
-                        <img
-                          src={collab.image}
-                          alt={collab.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-charcoal-800 flex items-center justify-center text-charcoal-500 text-sm font-medium">
-                        {collab.name.charAt(0)}
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-sm text-white">{collab.name}</p>
-                      {collab.role && (
-                        <p className="text-xs text-charcoal-400">
-                          {collab.role}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollReveal>
-          )}
+            {about?.press && (
+              <ScrollReveal delay={0.3}>
+                <h3 className="text-sm uppercase tracking-widest text-gold font-mono mb-6">Selected Press</h3>
+                <div className="prose prose-invert prose-sm prose-p:text-zinc-400" dangerouslySetInnerHTML={{ __html: about.press }} />
+              </ScrollReveal>
+            )}
+            
+            {about?.collaborators && (
+              <ScrollReveal delay={0.4} className="md:col-span-2">
+                <h3 className="text-sm uppercase tracking-widest text-gold font-mono mb-6 border-t border-zinc-800 pt-8 mt-4">Selected Collaborators</h3>
+                <div className="prose prose-invert prose-sm prose-p:text-zinc-400" dangerouslySetInnerHTML={{ __html: about.collaborators }} />
+              </ScrollReveal>
+            )}
+          </div>
         </div>
       </div>
     </div>

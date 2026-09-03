@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
-  const settings = await prisma.siteSettings.findFirst();
+  const { data: settings } = await supabase.from("SiteSettings").select("*").limit(1).single();
   return NextResponse.json(settings || {});
 }
 
@@ -14,29 +14,34 @@ export async function PUT(req: NextRequest) {
 
   const body = await req.json();
 
-  let settings = await prisma.siteSettings.findFirst();
-  if (settings) {
-    settings = await prisma.siteSettings.update({
-      where: { id: settings.id },
-      data: {
-        siteName: body.siteName || "Director Portfolio",
-        tagline: body.tagline || "",
-        heroSubtitle: body.heroSubtitle || "",
-        contactEmail: body.contactEmail || "",
-        socialLinks: body.socialLinks || null,
-      },
-    });
+  const { data: existingSettings } = await supabase.from("SiteSettings").select("id").limit(1).maybeSingle();
+
+  const settingsData = {
+    siteName: body.siteName || "Director Portfolio",
+    tagline: body.tagline || "",
+    heroSubtitle: body.heroSubtitle || "",
+    contactEmail: body.contactEmail || "",
+    socialLinks: body.socialLinks || null,
+    updatedAt: new Date().toISOString()
+  };
+
+  let result;
+  if (existingSettings) {
+    const { data } = await supabase
+      .from("SiteSettings")
+      .update(settingsData)
+      .eq("id", existingSettings.id)
+      .select()
+      .single();
+    result = data;
   } else {
-    settings = await prisma.siteSettings.create({
-      data: {
-        siteName: body.siteName || "Director Portfolio",
-        tagline: body.tagline || "",
-        heroSubtitle: body.heroSubtitle || "",
-        contactEmail: body.contactEmail || "",
-        socialLinks: body.socialLinks || null,
-      },
-    });
+    const { data } = await supabase
+      .from("SiteSettings")
+      .insert([settingsData])
+      .select()
+      .single();
+    result = data;
   }
 
-  return NextResponse.json(settings);
+  return NextResponse.json(result);
 }
