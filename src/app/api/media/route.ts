@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       !file.type.includes("svg") &&
       !file.type.includes("gif")
     ) {
-      finalBuffer = await sharp(buffer)
+      finalBuffer = await sharp(buffer as any)
         .resize(1920, 1920, { fit: "inside", withoutEnlargement: true })
         .webp({ quality: 85 })
         .toBuffer();
