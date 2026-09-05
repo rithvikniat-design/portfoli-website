@@ -16,15 +16,15 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: "Director Portfolio",
-    template: "%s | Director Portfolio",
+    default: "Ayalapu Rithvik Reddy",
+    template: "%s | Ayalapu Rithvik Reddy",
   },
-  description:
-    "Award-winning filmmaker and novelist. Exploring the human condition through cinema and literature.",
+  description: "Official portfolio and filmography.",
   openGraph: {
-    type: "website",
-    locale: "en_US",
-    siteName: "Director Portfolio",
+    title: "Ayalapu Rithvik Reddy",
+    description: "Official portfolio and filmography.",
+    url: "https://portfoli-website-puce.vercel.app",
+    siteName: "Ayalapu Rithvik Reddy",
   },
 };
 

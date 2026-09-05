@@ -19,7 +19,7 @@ export async function PUT(req: NextRequest) {
   const { data: existingSettings } = await supabase.from("SiteSettings").select("id").limit(1).maybeSingle();
 
   const settingsData = {
-    siteName: body.siteName || "Director Portfolio",
+    siteName: body.siteName || "Ayalapu Rithvik Reddy",
     tagline: body.tagline || "",
     heroSubtitle: body.heroSubtitle || "",
     contactEmail: body.contactEmail || "",

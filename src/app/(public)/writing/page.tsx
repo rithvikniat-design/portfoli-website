@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { BookOpen } from "lucide-react";
 
-export const metadata = { title: "Writing & Novels | Director Portfolio" };
+export const metadata = { title: "Writing & Novels | Ayalapu Rithvik Reddy" };
 
 export default async function WritingPage() {
   const { data: novels } = await supabase.from("Novel").select("*").eq("status", "published").order("order", { ascending: true });

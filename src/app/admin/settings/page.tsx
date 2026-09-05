@@ -5,7 +5,7 @@ import { Save, Loader2 } from "lucide-react";
 
 export default function AdminSettingsPage() {
   const [form, setForm] = useState({
-    siteName: "Director Portfolio",
+    siteName: "Ayalapu Rithvik Reddy",
     tagline: "",
     heroSubtitle: "",
     contactEmail: "",

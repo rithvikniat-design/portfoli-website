@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 import WorkCard from "@/components/public/WorkCard";
 import ScrollReveal from "@/components/public/ScrollReveal";
 
-export const metadata = { title: "Selected Works | Director Portfolio" };
+export const metadata = { title: "Selected Works | Ayalapu Rithvik Reddy" };
 
 export default async function WorksPage() {
   const { data: works } = await supabase.from("Work").select("*").eq("status", "published").order("order", { ascending: true });

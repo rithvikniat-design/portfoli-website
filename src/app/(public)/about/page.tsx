@@ -2,7 +2,7 @@ import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 import ScrollReveal from "@/components/public/ScrollReveal";
 
-export const metadata = { title: "About | Director Portfolio" };
+export const metadata = { title: "About | Ayalapu Rithvik Reddy" };
 
 export default async function AboutPage() {
   const { data: about } = await supabase.from("About").select("*").limit(1).single();

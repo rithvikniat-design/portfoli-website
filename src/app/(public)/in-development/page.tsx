@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import ScrollReveal from "@/components/public/ScrollReveal";
 
-export const metadata = { title: "In Development | Director Portfolio" };
+export const metadata = { title: "In Development | Ayalapu Rithvik Reddy" };
 
 export default async function InDevelopmentPage() {
   const { data: projects } = await supabase.from("InDevProject").select("*").eq("status", "published").order("order", { ascending: true });
