@@ -29,27 +29,65 @@ export default function ImageUpload({
       setError("");
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        // Simulate progress
-        const progressInterval = setInterval(() => {
-          setProgress((p) => Math.min(p + 10, 90));
-        }, 200);
-
-        const res = await fetch("/api/media", {
+        // Step 1: Get a signed upload URL from our API (small JSON request, no file data)
+        setProgress(10);
+        const urlRes = await fetch("/api/media/upload-url", {
           method: "POST",
-          body: formData,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename: file.name,
+            contentType: file.type,
+          }),
         });
 
-        clearInterval(progressInterval);
-        setProgress(100);
-
-        if (!res.ok) {
-          throw new Error("Upload failed");
+        if (!urlRes.ok) {
+          const errData = await urlRes.json().catch(() => ({}));
+          throw new Error(errData.error || `Failed to get upload URL (${urlRes.status})`);
         }
 
-        const media = await res.json();
+        const { signedUrl, path: filePath, token, filename } = await urlRes.json();
+        setProgress(20);
+
+        // Step 2: Upload file directly to Supabase Storage from the browser
+        // This bypasses Vercel's 4.5MB serverless function limit
+        const uploadRes = await fetch(signedUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": file.type,
+          },
+          body: file,
+        });
+
+        if (!uploadRes.ok) {
+          const errText = await uploadRes.text().catch(() => "");
+          throw new Error(`Direct upload failed (${uploadRes.status}): ${errText}`);
+        }
+
+        setProgress(80);
+
+        // Step 3: Save metadata via our API route (small JSON, no file data)
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const publicUrl = `${supabaseUrl}/storage/v1/object/public/uploads/${filename}`;
+
+        const metaRes = await fetch("/api/media", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filename,
+            url: publicUrl,
+            mimeType: file.type,
+            size: file.size,
+            alt: "",
+          }),
+        });
+
+        if (!metaRes.ok) {
+          const errData = await metaRes.json().catch(() => ({}));
+          throw new Error(errData.error || `Failed to save metadata (${metaRes.status})`);
+        }
+
+        const media = await metaRes.json();
+        setProgress(100);
         onChange(media.url);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Upload failed");
