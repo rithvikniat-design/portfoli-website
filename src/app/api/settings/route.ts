@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const { data: settings } = await supabase.from("SiteSettings").select("*").limit(1).single();
   return NextResponse.json(settings || {});
